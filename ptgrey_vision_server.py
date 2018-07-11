@@ -17,6 +17,7 @@ class SimulatedVisionServer(object):
     def ros_image_cb(self, ros_data):
         np_arr = np.fromstring(ros_data.data, np.uint8)
         self.ros_image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+        self.ros_image_stamp = ros_data.header.stamp
         
     def ros_cam_info_cb(self, ros_data):
         self.ros_cam_info=ros_data
@@ -33,6 +34,8 @@ class SimulatedVisionServer(object):
         self.listener=tf.TransformListener()
         self.frame_id="world"
         self.ros_image=None
+        self.ros_image_stamp=rospy.Time(0)
+        self.last_ros_image_stamp=rospy.Time(0)
         self.ros_cam_info=None
         self.ros_img_sub=rospy.Subscriber('/rviz_sim_cameras/overhead_camera/image/compressed', CompressedImage, self.ros_image_cb)
         self.ros_cam_trigger=rospy.ServiceProxy('/rviz_sim_cameras/overhead_camera/camera_trigger', Trigger)
@@ -48,13 +51,28 @@ class SimulatedVisionServer(object):
         
         now=rospy.Time.now()
         
+        if self.ros_cam_info is None:
+            raise Exception("Camera Info not received")
+        
         try:
             self.ros_cam_trigger.wait_for_service(timeout=0.1)
-            self.ros_cam_trigger()
-            time.sleep(0.5)
+            self.ros_cam_trigger()            
         except:
             pass
         
+        wait_count=0
+        while self.ros_image is None or self.ros_image_stamp == self.last_ros_image_stamp:
+            if wait_count > 250:
+                raise Exception("Image receive timeout")
+            time.sleep(0.25)
+            wait_count += 1
+        
+        img=self.ros_image
+        self.last_ros_image=img
+                
+        if self.ros_image is None:
+            raise Exception("Camera image data not received")
+               
         r_array=RecognizedObjectArray()
         r_array.header.stamp=now
         r_array.header.frame_id=self.frame_id
@@ -62,11 +80,7 @@ class SimulatedVisionServer(object):
         if goal.use_roi:
             raise Warning("use_roi in ObjectRecognitionRequest ignored")
         
-        if self.ros_cam_info is None:
-            raise Exception("Camera Info not received")
         
-        if self.ros_image is None:
-            raise Exception("Camera image data not received")
         
         (c_trans,c_rot) = self.listener.lookupTransform("/world", self.ros_cam_info.header.frame_id, rospy.Time(0))
         
