@@ -13,9 +13,10 @@ import arm_composites_manufacturing_controller_commander as controller_commander
 from object_recognition_msgs.msg import ObjectRecognitionAction, ObjectRecognitionGoal
 
 import tf
+import time
 
-#ft_threshold=[250,250,250,250,250,250]
-ft_threshold=[]
+ft_threshold=[250,250,250,250,250,250]
+#ft_threshold=[]
 
 
 class ObjectRecognitionCommander(object):
@@ -59,7 +60,7 @@ def main():
     
     object_target=object_commander.get_object_gripper_target_pose("leeward_mid_panel")
     
-    controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 1, ft_threshold)  
+    controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 1.2, ft_threshold)  
         
     print "============ Printing robot Pose"
     print controller_commander.get_current_pose_msg()  
@@ -67,28 +68,45 @@ def main():
     print "============ Generating plan 1"
     
     pose_target=copy.deepcopy(object_target)
-    pose_target.p[2] += 0.5       
+    pose_target.p[2] += 0.5
     
     print 'Target:',pose_target
     
     print "============ Executing plan1"
     controller_commander.plan_and_move(pose_target)        
     print 'Execution Finished.'
-            
-    ########## Vertical Path ############
+    
+    ########## Vertical Path 1 ############
 
-    controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 0.4, ft_threshold)
+    controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 0.8, ft_threshold)
     
     print "============ Printing robot Pose"
     print controller_commander.get_current_pose_msg()  
     print "============ Generating plan 2"
 
     pose_target2=copy.deepcopy(object_target)
-    pose_target2.p[2] -= 0.25
+    pose_target2.p[2] += 0.15
     
     print 'Target:',pose_target2
     
     print "============ Executing plan2"
+    controller_commander.compute_cartesian_path_and_move(pose_target2, avoid_collisions=False)
+    print 'Execution Finished.'
+        
+    ########## Vertical Path 2 ############
+
+    controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 0.4, ft_threshold)
+    
+    print "============ Printing robot Pose"
+    print controller_commander.get_current_pose_msg()  
+    print "============ Generating plan 3"
+
+    pose_target2=copy.deepcopy(object_target)
+    pose_target2.p[2] -= 0.15
+    
+    print 'Target:',pose_target2
+    
+    print "============ Executing plan3"
     controller_commander.compute_cartesian_path_and_move(pose_target2, avoid_collisions=False)
     print 'Execution Finished.'
     
@@ -99,14 +117,14 @@ def main():
     print "============ Lift panel!"
             
     rapid_node.set_digital_io("Vacuum_enable", 1)
-    
+    time.sleep(0.5)
     pose_target3=copy.deepcopy(object_target)
     pose_target3.p[2] += 0.5
             
     
     print 'Target:',pose_target3
     
-    print "============ Executing plan3"
+    print "============ Executing plan4"
     controller_commander.compute_cartesian_path_and_move(pose_target3, avoid_collisions=False)
     print 'Execution Finished.'
 

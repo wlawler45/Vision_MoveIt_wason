@@ -4,19 +4,25 @@ from object_recognition_msgs.msg import ObjectRecognitionAction, ObjectRecogniti
      RecognizedObject, RecognizedObjectArray
 import tf
 from geometry_msgs.msg import Pose, PoseWithCovarianceStamped, Point, Quaternion
-from sensor_msgs.msg import CompressedImage, CameraInfo
+from sensor_msgs.msg import CompressedImage, CameraInfo, Image
 import numpy as np
 import cv2
 from std_srvs.srv import Trigger
 import time
 import general_robotics_toolbox as rox
 from general_robotics_toolbox import ros_msg as rox_msg
+from cv_bridge import CvBridge, CvBridgeError
 
 class SimulatedVisionServer(object):
     
     def ros_image_cb(self, ros_data):
         np_arr = np.fromstring(ros_data.data, np.uint8)
         self.ros_image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+        self.ros_image_stamp = ros_data.header.stamp
+
+    def ros_raw_image_cb(self, ros_data):
+        print "Got image"
+        self.ros_image = self.bridge.imgmsg_to_cv2(ros_data, desired_encoding="passthrough")
         self.ros_image_stamp = ros_data.header.stamp
         
     def ros_cam_info_cb(self, ros_data):
@@ -27,7 +33,8 @@ class SimulatedVisionServer(object):
             self.distCoeffs=np.array([[0,0,0,0,0]])      
     
     def __init__(self, object_names, frame_id="world", action_ns="recognize_objects"):        
-                
+        
+        self.bridge = CvBridge()        
         self.server=SimpleActionServer(action_ns, ObjectRecognitionAction, execute_cb=self.execute_callback)
         self.recognized_objects=dict()
         self.object_names=object_names
@@ -37,15 +44,16 @@ class SimulatedVisionServer(object):
         self.ros_image_stamp=rospy.Time(0)
         self.last_ros_image_stamp=rospy.Time(0)
         self.ros_cam_info=None
-        self.ros_img_sub=rospy.Subscriber('/rviz_sim_cameras/overhead_camera/image/compressed', CompressedImage, self.ros_image_cb)
-        self.ros_cam_trigger=rospy.ServiceProxy('/rviz_sim_cameras/overhead_camera/camera_trigger', Trigger)
-        self.ros_cam_info_sub=rospy.Subscriber('/rviz_sim_cameras/overhead_camera/camera_info', CameraInfo, self.ros_cam_info_cb)
+        self.ros_img_sub=rospy.Subscriber('/overhead_camera/image', Image, self.ros_raw_image_cb)
+        self.ros_cam_trigger=rospy.ServiceProxy('/camera_trigger', Trigger)
+        self.ros_cam_info_sub=rospy.Subscriber('/overhead_camera/camera_info', CameraInfo, self.ros_cam_info_cb)
         self.aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_6X6_250)
         self.gripper_board=cv2.aruco.GridBoard_create(2, 2, .0972, .005, self.aruco_dict, 1)
         self.panel_board=cv2.aruco.GridBoard_create(2, 2, .0972, .005, self.aruco_dict, 5)
         self.boards=[self.gripper_board, self.panel_board]
         self.object_ids=["vacuum_gripper_tool", "leeward_mid_panel"]
         self.tag_ids=["vacuum_gripper_marker_1","leeward_mid_panel_marker_1"]
+        
         
     def execute_callback(self, goal):
         
@@ -61,11 +69,13 @@ class SimulatedVisionServer(object):
             pass
         
         wait_count=0
-        while self.ros_image is None or self.ros_image_stamp == self.last_ros_image_stamp:
+        """while self.ros_image is None or self.ros_image_stamp == self.last_ros_image_stamp:
             if wait_count > 250:
                 raise Exception("Image receive timeout")
             time.sleep(0.25)
-            wait_count += 1
+            wait_count += 1"""
+
+        time.sleep(0.25)
         
         img=self.ros_image
         self.last_ros_image=img
