@@ -12,6 +12,7 @@ import time
 import general_robotics_toolbox as rox
 from general_robotics_toolbox import ros_msg as rox_msg
 from cv_bridge import CvBridge, CvBridgeError
+import sys
 
 class SimulatedVisionServer(object):
     
@@ -44,8 +45,11 @@ class SimulatedVisionServer(object):
         self.ros_image_stamp=rospy.Time(0)
         self.last_ros_image_stamp=rospy.Time(0)
         self.ros_cam_info=None
-        self.ros_img_sub=rospy.Subscriber('/overhead_camera/image', Image, self.ros_raw_image_cb)
-        self.ros_cam_trigger=rospy.ServiceProxy('/camera_trigger', Trigger)
+        if not "compressed-image" in sys.argv:
+            self.ros_img_sub=rospy.Subscriber('/overhead_camera/image', Image, self.ros_raw_image_cb)
+        else:  
+            self.ros_img_sub=rospy.Subscriber('/overhead_camera/image/compressed', CompressedImage, self.ros_image_cb)
+        self.ros_cam_trigger=rospy.ServiceProxy('/overhead_camera/camera_trigger', Trigger)
         self.ros_cam_info_sub=rospy.Subscriber('/overhead_camera/camera_info', CameraInfo, self.ros_cam_info_cb)
         self.aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_6X6_250)
         self.gripper_board=cv2.aruco.GridBoard_create(2, 2, .0972, .005, self.aruco_dict, 1)
@@ -68,17 +72,17 @@ class SimulatedVisionServer(object):
         except:
             pass
         
+        self.last_ros_image_stamp=self.ros_image_stamp
+
         wait_count=0
-        """while self.ros_image is None or self.ros_image_stamp == self.last_ros_image_stamp:
+        while self.ros_image is None or self.ros_image_stamp == self.last_ros_image_stamp:
             if wait_count > 250:
                 raise Exception("Image receive timeout")
             time.sleep(0.25)
-            wait_count += 1"""
-
-        time.sleep(0.25)
+            wait_count += 1        
         
         img=self.ros_image
-        self.last_ros_image=img
+        
                 
         if self.ros_image is None:
             raise Exception("Camera image data not received")

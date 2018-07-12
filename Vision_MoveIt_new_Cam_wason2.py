@@ -14,10 +14,9 @@ from object_recognition_msgs.msg import ObjectRecognitionAction, ObjectRecogniti
 
 import tf
 import time
+import sys
 
 ft_threshold=[250,250,250,250,250,250]
-#ft_threshold=[]
-
 
 class ObjectRecognitionCommander(object):
     def __init__(self):
@@ -48,10 +47,21 @@ class ObjectRecognitionCommander(object):
         
 
 def main():
+            
+    t1=time.time()
+    
+    do_place="place-panel" in sys.argv
+    
+    if not "disable-ft" in sys.argv:
+        ft_threshold1=ft_threshold
+    else:
+        ft_threshold1=[]
     
     rospy.init_node('Vision_MoveIt_new_Cam_wason2', anonymous=True)
     
     print "============ Starting setup"   
+    
+    listener=tf.TransformListener()
     
     rapid_node = rapid_node_pkg.AbbIrc5RAPIDNodeCommander()
     controller_commander=controller_commander_pkg.arm_composites_manufacturing_controller_commander()
@@ -60,8 +70,8 @@ def main():
     
     object_target=object_commander.get_object_gripper_target_pose("leeward_mid_panel")
     
-    controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 1.2, ft_threshold)  
-        
+    controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 1.2, ft_threshold1)  
+    
     print "============ Printing robot Pose"
     print controller_commander.get_current_pose_msg()  
     #print robot.get_current_state().joint_state.position
@@ -78,7 +88,7 @@ def main():
     
     ########## Vertical Path 1 ############
 
-    controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 0.8, ft_threshold)
+    controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 0.8, ft_threshold1)
     
     print "============ Printing robot Pose"
     print controller_commander.get_current_pose_msg()  
@@ -95,7 +105,7 @@ def main():
         
     ########## Vertical Path 2 ############
 
-    controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 0.4, ft_threshold)
+    controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 0.4, ft_threshold1)
     
     print "============ Printing robot Pose"
     print controller_commander.get_current_pose_msg()  
@@ -126,7 +136,65 @@ def main():
     
     print "============ Executing plan4"
     controller_commander.compute_cartesian_path_and_move(pose_target3, avoid_collisions=False)
+    
+        
+    
+    if (do_place):
+        print "=========== Do place!"
+        print ""
+        
+        controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 1.2, ft_threshold1)
+        
+        print "============ Generating plan 5"
+        
+        (trans1,rot1) = listener.lookupTransform("world", "panel_nest_leeward_mid_panel_target", rospy.Time(0))
+        panel_target_pose=rox.Pose(rox.q2R([rot1[3], rot1[0], rot1[1], rot1[2]]), trans1)
+        (trans2,rot2) = listener.lookupTransform("leeward_mid_panel", "leeward_mid_panel_gripper_target", rospy.Time(0))
+        panel_gripper_target_pose=rox.Pose(rox.q2R([rot2[3], rot2[0], rot2[1], rot2[2]]), trans2)
+        pose_target=panel_target_pose * panel_gripper_target_pose
+        print pose_target.R
+        print pose_target.p               
+        
+        pose_target2=copy.deepcopy(pose_target)
+        pose_target2.p[2] += 0.5
+        
+        print "============ Executing plan 5"
+        controller_commander.plan_and_move(pose_target2)
+        
+        controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 0.4, ft_threshold1)
+    
+        print "============ Printing robot Pose"
+        print controller_commander.get_current_pose_msg()  
+        print "============ Generating plan 3"
+    
+        pose_target2=copy.deepcopy(pose_target)
+        pose_target2.p[2] -= 0.15
+        
+        print 'Target:',pose_target2
+        
+        print "============ Executing plan3"
+        controller_commander.compute_cartesian_path_and_move(pose_target2, avoid_collisions=False)
+        print 'Execution Finished.'      
+        
+        
+        print "============ Lift gripper!"
+            
+        rapid_node.set_digital_io("Vacuum_enable", 0)
+        time.sleep(0.5)
+        pose_target3=copy.deepcopy(pose_target)
+        pose_target3.p[2] += 0.5
+                
+        
+        print 'Target:',pose_target3
+        
+        print "============ Executing plan4"
+        controller_commander.compute_cartesian_path_and_move(pose_target3, avoid_collisions=False)
+        
+        
+        
+    t2=time.time()
     print 'Execution Finished.'
+    print "Execution time: " + str(t2-t1) + " seconds"
 
 if __name__ == '__main__':
     main()
