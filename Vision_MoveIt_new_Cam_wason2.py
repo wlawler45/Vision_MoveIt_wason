@@ -116,7 +116,10 @@ def main():
     print 'Target:',pose_target2
     
     print "============ Executing plan3"
-    controller_commander.compute_cartesian_path_and_move(pose_target2, avoid_collisions=False)
+    try:
+        controller_commander.compute_cartesian_path_and_move(pose_target2, avoid_collisions=False)
+    except:
+        pass
     print 'Execution Finished.'
     
     ########## Lift Path ############
@@ -170,7 +173,10 @@ def main():
         print 'Target:',pose_target2
         
         print "============ Executing plan3"
-        controller_commander.compute_cartesian_path_and_move(pose_target2, avoid_collisions=False)
+        try:
+            controller_commander.compute_cartesian_path_and_move(pose_target2, avoid_collisions=False)
+        except:
+            pass
         print 'Execution Finished.'      
         
         
