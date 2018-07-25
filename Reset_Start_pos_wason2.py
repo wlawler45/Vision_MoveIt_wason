@@ -31,7 +31,7 @@ if __name__ == '__main__':
     #print robot.get_current_state().joint_state.position
     print "============ Generating plan 1"
     
-    pose_target=rox.Pose(rox.q2R(Q), np.copy(P))
+    pose_target=rox.Transform(rox.q2R(Q), np.copy(P))
         
     print 'Target:',pose_target
     

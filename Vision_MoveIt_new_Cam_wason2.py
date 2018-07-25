@@ -6,13 +6,13 @@ import actionlib
 import general_robotics_toolbox as rox
 import general_robotics_toolbox.urdf as urdf
 import general_robotics_toolbox.ros_msg as rox_msg
+from general_robotics_toolbox import ros_tf as tf
 
 import abb_irc5_rapid_node_commander as rapid_node_pkg
 import arm_composites_manufacturing_controller_commander as controller_commander_pkg
 
 from object_recognition_msgs.msg import ObjectRecognitionAction, ObjectRecognitionGoal
 
-import tf
 import time
 import sys
 
@@ -33,7 +33,7 @@ class ObjectRecognitionCommander(object):
         
         for r in ret.recognized_objects.objects:
             if r.type.key == key:
-                return rox_msg.msg2pose(r.pose.pose.pose)
+                return rox_msg.msg2transform(r.pose.pose.pose)
             
         raise Exception("Requested object not found")
     
@@ -41,8 +41,7 @@ class ObjectRecognitionCommander(object):
         
         object_pose=self.get_object_pose(key)
                 
-        (trans1,rot1) = self.listener.lookupTransform(key, key + "_gripper_target", rospy.Time(0))
-        tag_rel_pose=rox.Pose(rox.q2R([rot1[3], rot1[0], rot1[1], rot1[2]]), trans1)
+        tag_rel_pose = self.listener.lookupTransform(key, key + "_gripper_target", rospy.Time(0))        
         return object_pose * tag_rel_pose
         
 
@@ -147,10 +146,8 @@ def main():
         
         print "============ Generating plan 5"
         
-        (trans1,rot1) = listener.lookupTransform("world", "panel_nest_leeward_mid_panel_target", rospy.Time(0))
-        panel_target_pose=rox.Pose(rox.q2R([rot1[3], rot1[0], rot1[1], rot1[2]]), trans1)
-        (trans2,rot2) = listener.lookupTransform("leeward_mid_panel", "leeward_mid_panel_gripper_target", rospy.Time(0))
-        panel_gripper_target_pose=rox.Pose(rox.q2R([rot2[3], rot2[0], rot2[1], rot2[2]]), trans2)
+        panel_target_pose = listener.lookupTransform("world", "panel_nest_leeward_mid_panel_target", rospy.Time(0))        
+        panel_gripper_target_pose = listener.lookupTransform("leeward_mid_panel", "leeward_mid_panel_gripper_target", rospy.Time(0))        
         pose_target=panel_target_pose * panel_gripper_target_pose
         print pose_target.R
         print pose_target.p               

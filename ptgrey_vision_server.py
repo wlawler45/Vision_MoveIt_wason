@@ -2,7 +2,6 @@ import rospy
 from actionlib import SimpleActionServer
 from object_recognition_msgs.msg import ObjectRecognitionAction, ObjectRecognitionResult, \
      RecognizedObject, RecognizedObjectArray
-import tf
 from geometry_msgs.msg import Pose, PoseWithCovarianceStamped, Point, Quaternion
 from sensor_msgs.msg import CompressedImage, CameraInfo, Image
 import numpy as np
@@ -11,6 +10,7 @@ from std_srvs.srv import Trigger
 import time
 import general_robotics_toolbox as rox
 from general_robotics_toolbox import ros_msg as rox_msg
+from general_robotics_toolbox import ros_tf as tf
 from cv_bridge import CvBridge, CvBridgeError
 import sys
 
@@ -18,12 +18,20 @@ class SimulatedVisionServer(object):
     
     def ros_image_cb(self, ros_data):
         np_arr = np.fromstring(ros_data.data, np.uint8)
-        self.ros_image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+        ros_image1 = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+        if len(ros_image1) > 2 and ros_image1.shape[2] == 4:
+            self.ros_image=cv2.cvtColor(ros_image1, cv2.COLOR_BGRA2BGR)
+        else:
+            self.ros_image=ros_image1
         self.ros_image_stamp = ros_data.header.stamp
 
     def ros_raw_image_cb(self, ros_data):
         print "Got image"
-        self.ros_image = self.bridge.imgmsg_to_cv2(ros_data, desired_encoding="passthrough")
+        ros_image1 = self.bridge.imgmsg_to_cv2(ros_data, desired_encoding="passthrough")
+        if len(ros_image1) > 2 and ros_image1.shape[2] == 4:
+            self.ros_image=cv2.cvtColor(ros_image1, cv2.COLOR_BGRA2BGR)
+        else:
+            self.ros_image=ros_image1
         self.ros_image_stamp = ros_data.header.stamp
         
     def ros_cam_info_cb(self, ros_data):
@@ -96,10 +104,8 @@ class SimulatedVisionServer(object):
         
         
         
-        (c_trans,c_rot) = self.listener.lookupTransform("/world", self.ros_cam_info.header.frame_id, rospy.Time(0))
-        
-        c_pose=rox.Pose(rox.q2R([c_rot[3], c_rot[0], c_rot[1], c_rot[2]]), c_trans)
-        
+        c_pose = self.listener.lookupTransform("/world", self.ros_cam_info.header.frame_id, rospy.Time(0))
+                
         parameters =  cv2.aruco.DetectorParameters_create()
         parameters.cornerRefinementWinSize=32
         parameters.cornerRefinementMethod=cv2.aruco.CORNER_REFINE_CONTOUR        
@@ -111,20 +117,18 @@ class SimulatedVisionServer(object):
                 print "Found tag: " + tag_id
         
                 try:
-                    (a_trans,a_rot) = self.listener.lookupTransform(tag_id, object_id, rospy.Time(0))
+                    o_pose = self.listener.lookupTransform(tag_id, object_id, rospy.Time(0))
                     print object_id
-                    print a_trans
-                    print a_rot
+                    print o_pose
                     print ""
-                    
-                    o_pose=rox.Pose(rox.q2R([a_rot[3], a_rot[0], a_rot[1], a_rot[2]]), a_trans)
+                                        
                     Ra, b = cv2.Rodrigues(rvec)
-                    a_pose=rox.Pose(Ra,tvec)
+                    a_pose=rox.Transform(Ra,tvec)
                     
                     object_pose=c_pose*(a_pose*o_pose)
                                     
                     p=PoseWithCovarianceStamped()                
-                    p.pose.pose=rox_msg.pose2msg(object_pose)
+                    p.pose.pose=rox_msg.transform2pose_msg(object_pose)
                     p.header.stamp=now
                     p.header.frame_id=self.frame_id
                     

@@ -12,7 +12,7 @@ def main():
 
     def tf_lookup(target_frame, source_frame):
         (trans1,rot1) = listener.lookupTransform(target_frame, source_frame, rospy.Time(0))
-        return rox.Pose(rox.q2R([rot1[3], rot1[0], rot1[1], rot1[2]]), trans1)
+        return rox.Transform(rox.q2R([rot1[3], rot1[0], rot1[1], rot1[2]]), trans1)
        
     nest_pose=tf_lookup("world","panel_nest")
     gripper_pose=tf_lookup("world", "vacuum_gripper_tool")
