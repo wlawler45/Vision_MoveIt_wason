@@ -11,6 +11,7 @@ import time
 import general_robotics_toolbox as rox
 from general_robotics_toolbox import ros_msg as rox_msg
 from general_robotics_toolbox import ros_tf as tf
+from arm_composites_manufacturing_process import PayloadTransformListener
 from cv_bridge import CvBridge, CvBridgeError
 import sys
 
@@ -47,7 +48,7 @@ class SimulatedVisionServer(object):
         self.server=SimpleActionServer(action_ns, ObjectRecognitionAction, execute_cb=self.execute_callback)
         self.recognized_objects=dict()
         self.object_names=object_names
-        self.listener=tf.TransformListener()
+        self.listener=PayloadTransformListener()
         self.frame_id="world"
         self.ros_image=None
         self.ros_image_stamp=rospy.Time(0)
@@ -64,7 +65,7 @@ class SimulatedVisionServer(object):
         self.panel_board=cv2.aruco.GridBoard_create(2, 2, .0972, .005, self.aruco_dict, 5)
         self.boards=[self.gripper_board, self.panel_board]
         self.object_ids=["vacuum_gripper_tool", "leeward_mid_panel"]
-        self.tag_ids=["vacuum_gripper_marker_1","leeward_mid_panel_marker_1"]
+        self.tag_ids=["vacuum_gripper_marker_1","leeward_mid_panel_marker_5"]
         
         
     def execute_callback(self, goal):

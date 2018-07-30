@@ -6,7 +6,8 @@ import actionlib
 import general_robotics_toolbox as rox
 import general_robotics_toolbox.urdf as urdf
 import general_robotics_toolbox.ros_msg as rox_msg
-from general_robotics_toolbox import ros_tf as tf
+#from general_robotics_toolbox import ros_tf as tf
+from arm_composites_manufacturing_process import PayloadTransformListener
 
 import abb_irc5_rapid_node_commander as rapid_node_pkg
 import arm_composites_manufacturing_controller_commander as controller_commander_pkg
@@ -21,7 +22,7 @@ ft_threshold=[250,250,250,250,250,250]
 class ObjectRecognitionCommander(object):
     def __init__(self):
         self.client=actionlib.SimpleActionClient("recognize_objects", ObjectRecognitionAction)
-        self.listener=tf.TransformListener()
+        self.listener=PayloadTransformListener()
     
     def get_object_pose(self, key):
         self.client.wait_for_server()
@@ -60,7 +61,7 @@ def main():
     
     print "============ Starting setup"   
     
-    listener=tf.TransformListener()
+    listener=PayloadTransformListener()
     
     rapid_node = rapid_node_pkg.AbbIrc5RAPIDNodeCommander()
     controller_commander=controller_commander_pkg.arm_composites_manufacturing_controller_commander()
@@ -181,7 +182,9 @@ def main():
         
         
         print "============ Lift gripper!"
-            
+        
+        controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 0.7, [])
+        
         rapid_node.set_digital_io("Vacuum_enable", 0)
         time.sleep(0.5)
         pose_target3=copy.deepcopy(pose_target)

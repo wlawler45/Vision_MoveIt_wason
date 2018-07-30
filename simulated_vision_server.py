@@ -3,7 +3,9 @@ from actionlib import SimpleActionServer
 from object_recognition_msgs.msg import ObjectRecognitionAction, ObjectRecognitionResult, \
      RecognizedObject, RecognizedObjectArray
 import tf
+from arm_composites_manufacturing_process import PayloadTransformListener
 from geometry_msgs.msg import Pose, PoseWithCovarianceStamped, Point, Quaternion
+from general_robotics_toolbox import ros_msg as rox_msg
 
 class SimulatedVisionServer(object):
     def __init__(self, object_names, frame_id="world", action_ns="recognize_objects"):        
@@ -11,7 +13,7 @@ class SimulatedVisionServer(object):
         self.server=SimpleActionServer(action_ns, ObjectRecognitionAction, execute_cb=self.execute_callback)
         self.recognized_objects=dict()
         self.object_names=object_names
-        self.listener=tf.TransformListener()
+        self.listener=PayloadTransformListener()
         self.frame_id="world"
         
     def execute_callback(self, goal):
@@ -27,14 +29,13 @@ class SimulatedVisionServer(object):
         
         for o in self.object_names:
             try:
-                (trans,rot) = self.listener.lookupTransform("/world", o, rospy.Time(0))
+                object_tf = self.listener.lookupTransform("/world", o, rospy.Time(0))
                 print o
-                print trans
-                print rot
+                print object_tf
                 print ""
                                 
                 p=PoseWithCovarianceStamped()                
-                p.pose.pose=Pose(Point(trans[0], trans[1], trans[2]), Quaternion(rot[0], rot[1], rot[2], rot[3]))
+                p.pose.pose=rox_msg.transform2pose_msg(object_tf)
                 p.header.stamp=now
                 p.header.frame_id=self.frame_id
                 
