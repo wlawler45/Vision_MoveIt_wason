@@ -48,7 +48,8 @@ class SimulatedVisionServer(object):
     def __init__(self, frame_id="world", action_ns="recognize_objects"):        
         
         self.bridge = CvBridge()        
-        self.server=SimpleActionServer(action_ns, ObjectRecognitionAction, execute_cb=self.execute_callback)
+        self.server=SimpleActionServer(action_ns, ObjectRecognitionAction, execute_cb=self.execute_callback, auto_start=False)
+        self.server.start()
         self.recognized_objects=dict()
         
         self.listener=PayloadTransformListener()
