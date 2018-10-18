@@ -5,7 +5,7 @@ import general_robotics_toolbox as rox
 from general_robotics_toolbox import urdf
 
 import abb_irc5_rapid_node_commander as rapid_node_pkg
-import arm_composites_manufacturing_controller_commander as controller_commander_pkg
+from safe_kinematic_controller.ros.commander import ControllerCommander
 
 #Old link6 tool position
 #P = [[ 1.8288, -0.0447, 1.237]]
@@ -17,14 +17,14 @@ P=[1.8475985 , -0.04983688,  0.82486047]
 
 if __name__ == '__main__':
     
-    rapid_node = rapid_node_pkg.AbbIrc5RAPIDNodeCommander()
-    controller_commander=controller_commander_pkg.arm_composites_manufacturing_controller_commander()
+    controller_commander=ControllerCommander()
     
     P=np.reshape(P,(3,))    
         
     rospy.init_node('Reset_Start_pos_wason2', anonymous=True)
     
-    controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 1, [])  
+    controller_commander.set_controller_mode(controller_commander.MODE_HALT, 1, [],[])
+    controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 1, [],[])  
         
     print "============ Printing robot Pose"
     print controller_commander.get_current_pose_msg()  

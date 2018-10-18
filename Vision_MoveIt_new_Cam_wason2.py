@@ -9,8 +9,8 @@ import general_robotics_toolbox.ros_msg as rox_msg
 #from general_robotics_toolbox import ros_tf as tf
 from arm_composites_manufacturing_process import PayloadTransformListener
 
-import abb_irc5_rapid_node_commander as rapid_node_pkg
-import arm_composites_manufacturing_controller_commander as controller_commander_pkg
+from rpi_abb_irc5.ros.rapid_commander import RAPIDCommander
+from safe_kinematic_controller.ros.commander import ControllerCommander
 
 from object_recognition_msgs.msg import ObjectRecognitionAction, ObjectRecognitionGoal
 
@@ -63,14 +63,16 @@ def main():
     
     listener=PayloadTransformListener()
     
-    rapid_node = rapid_node_pkg.AbbIrc5RAPIDNodeCommander()
-    controller_commander=controller_commander_pkg.arm_composites_manufacturing_controller_commander()
+    rapid_node = RAPIDCommander()
+    controller_commander=ControllerCommander()
     
     object_commander=ObjectRecognitionCommander()
     
+    controller_commander.set_controller_mode(controller_commander.MODE_HALT, 1, [], ft_threshold1)
+    
     object_target=object_commander.get_object_gripper_target_pose("leeward_mid_panel")
     
-    controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 1.2, ft_threshold1)  
+    controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 1, [], ft_threshold1)  
     
     print "============ Printing robot Pose"
     print controller_commander.get_current_pose_msg()  
@@ -88,7 +90,7 @@ def main():
     
     ########## Vertical Path 1 ############
 
-    controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 0.8, ft_threshold1)
+    controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 0.8, [], ft_threshold1)
     
     print "============ Printing robot Pose"
     print controller_commander.get_current_pose_msg()  
@@ -105,7 +107,7 @@ def main():
         
     ########## Vertical Path 2 ############
 
-    controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 0.4, ft_threshold1)
+    controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 0.4, [], ft_threshold1)
     
     print "============ Printing robot Pose"
     print controller_commander.get_current_pose_msg()  
@@ -125,7 +127,7 @@ def main():
     
     ########## Lift Path ############
 
-    controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 0.7, [])
+    controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 0.7, [], [])
 
     print "============ Lift panel!"
             
@@ -146,7 +148,7 @@ def main():
         print "=========== Do place!"
         print ""
         
-        controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 1.2, ft_threshold1)
+        controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 1, [], ft_threshold1)
         
         print "============ Generating plan 5"
         
@@ -162,7 +164,7 @@ def main():
         print "============ Executing plan 5"
         controller_commander.plan_and_move(pose_target2)
         
-        controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 0.4, ft_threshold1)
+        controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 0.4, [], ft_threshold1)
     
         print "============ Printing robot Pose"
         print controller_commander.get_current_pose_msg()  
@@ -183,7 +185,7 @@ def main():
         
         print "============ Lift gripper!"
         
-        controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 0.7, [])
+        controller_commander.set_controller_mode(controller_commander.MODE_AUTO_TRAJECTORY, 0.7, [], [])
         
         rapid_node.set_digital_io("Vacuum_enable", 0)
         time.sleep(0.5)
