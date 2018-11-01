@@ -123,6 +123,9 @@ def main():
         controller_commander.compute_cartesian_path_and_move(pose_target2, avoid_collisions=False)
     except:
         pass
+
+    controller_commander.set_controller_mode(controller_commander.MODE_HALT, 1, [], [])
+
     print 'Execution Finished.'
     
     ########## Lift Path ############
@@ -181,7 +184,7 @@ def main():
         except:
             pass
         print 'Execution Finished.'      
-        
+        controller_commander.set_controller_mode(controller_commander.MODE_HALT, 1, [], [])
         
         print "============ Lift gripper!"
         
