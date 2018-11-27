@@ -11,8 +11,8 @@ import time
 import general_robotics_toolbox as rox
 from general_robotics_toolbox import ros_msg as rox_msg
 from general_robotics_toolbox import ros_tf as tf
-from arm_composites_manufacturing_process import PayloadTransformListener
-from arm_composites_manufacturing_process import PayloadArray
+from industrial_payload_manager.payload_transform_listener import PayloadTransformListener
+from industrial_payload_manager.msg import PayloadArray
 from cv_bridge import CvBridge, CvBridgeError
 import sys
 import threading
@@ -138,7 +138,8 @@ class SimulatedVisionServer(object):
             
             for d in msg.delete_payloads:
                 if d in self.payloads:                    
-                    del self.payloads[d]                                           
+
+                    del self.payloads[d]
                 if d in self.link_markers:
                     del self.link_markers[d]
         
@@ -209,17 +210,22 @@ class SimulatedVisionServer(object):
         print c_pose.R
         parameters =  cv2.aruco.DetectorParameters_create()
         parameters.cornerRefinementWinSize=32
-        parameters.cornerRefinementMethod=cv2.aruco.CORNER_REFINE_CONTOUR
+
+        parameters.cornerRefinementMethod=cv2.aruco.CORNER_REFINE_SUBPIX
         corners, ids, rejectedImgPoints = cv2.aruco.detectMarkers(img, aruco_dict, parameters=parameters)
+        print ids
         for object_name, payload_markers in search_objects.items():
 
             tag_object_poses=dict()
 
             for m in payload_markers:
                 board = get_aruco_gridboard(m.marker, aruco_dict)
+                #board = cv2.aruco.GridBoard_create(4, 4, .04, .0075, aruco_dict, 16)
+
+
                 retval, rvec, tvec = cv2.aruco.estimatePoseBoard(corners, ids, board, self.ros_overhead_cam_info.camMatrix, self.ros_overhead_cam_info.distCoeffs)
                 if (retval > 0):
-                    if(m.name=="leeward_mid_panel_marker_5"):
+                    if(m.name=="leeward_mid_panel_marker_5" or m.name=="leeward_tip_panel_marker_5"):
                         print "Found tag: " + m.name
 
                         try:
@@ -281,7 +287,7 @@ class SimulatedVisionServer(object):
 
                 except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                 continue"""
-                        
+        print "Succeeded in finding tags"
         result = ObjectRecognitionResult()
         result.recognized_objects=r_array
 
@@ -398,7 +404,8 @@ class SimulatedVisionServer(object):
 
                 r=RecognizedObject()
                 r.header.stamp=now
-                r.header.frame_id=self.frame_id
+                r.header.frame_id=self.frker, aruco_dict)
+                board = cv2.aruco.GridBoard_createame_id
                 r.type.key=object_name
                 r.confidence=1
                 r.pose=p
