@@ -196,7 +196,7 @@ class SimulatedVisionServer(object):
             for m2 in m:
                 aruco_dicts.add(m2.marker.dictionary)
         print len(aruco_dicts)
-
+        aruco_dicts.add("DICT_ARUCO_ORIGINAL")
         assert len(aruco_dicts) == 1, "Currently all tags must be from the same dictionary"
 
         if not hasattr(cv2.aruco, next(iter(aruco_dicts))):
@@ -224,8 +224,11 @@ class SimulatedVisionServer(object):
 
 
                 retval, rvec, tvec = cv2.aruco.estimatePoseBoard(corners, ids, board, self.ros_overhead_cam_info.camMatrix, self.ros_overhead_cam_info.distCoeffs)
+                print retval
+                print rvec
+                print tvec
                 if (retval > 0):
-                    if(m.name=="leeward_mid_panel_marker_5" or m.name=="leeward_tip_panel_marker_5"):
+                    if(m.name=="leeward_mid_panel_marker_1" or m.name=="leeward_tip_panel_marker_1"):
                         print "Found tag: " + m.name
 
                         try:
