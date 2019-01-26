@@ -6,7 +6,7 @@ from geometry_msgs.msg import Pose, PoseWithCovarianceStamped, Point, Quaternion
 from sensor_msgs.msg import CompressedImage, CameraInfo, Image
 import numpy as np
 import cv2
-from pyspin_wrapper.srv import CameraTrigger
+from std_srvs.srv import Trigger
 import time
 import general_robotics_toolbox as rox
 from general_robotics_toolbox import ros_msg as rox_msg
@@ -98,12 +98,12 @@ class SimulatedVisionServer(object):
             self.ros_overhead_img_sub=rospy.Subscriber('/overhead_camera/image/compressed', CompressedImage, self.ros_image_cb)
             self.ros_gripper_1_img_sub=rospy.Subscriber('/gripper_camera_1/image/compressed', CompressedImage, self.ros_image_cb)
             self.ros_gripper_2_img_sub=rospy.Subscriber('/gripper_camera_2/image/compressed', CompressedImage, self.ros_image_cb)
-        self.ros_overhead_trigger=rospy.ServiceProxy('/overhead_camera/continuous_trigger', CameraTrigger)
+        self.ros_overhead_trigger=rospy.ServiceProxy('/overhead_camera/trigger', Trigger)
 
         self.ros_overhead_cam_info_sub=rospy.Subscriber('/overhead_camera/camera_info', CameraInfo, self.ros_cam_info_cb)
 
-        self.ros_gripper_1_trigger=rospy.ServiceProxy('/gripper_camera_1/continuous_trigger', CameraTrigger)
-        self.ros_gripper_2_trigger=rospy.ServiceProxy('/gripper_camera_2/continuous_trigger', CameraTrigger)
+        self.ros_gripper_1_trigger=rospy.ServiceProxy('/gripper_camera_1/trigger', Trigger)
+        self.ros_gripper_2_trigger=rospy.ServiceProxy('/gripper_camera_2/trigger', Trigger)
         self.ros_gripper_1_cam_info_sub=rospy.Subscriber('/gripper_camera_1/camera_info', CameraInfo, self.ros_cam_info_cb)
         self.ros_gripper_2_cam_info_sub=rospy.Subscriber('/gripper_camera_2/camera_info', CameraInfo, self.ros_cam_info_cb)
 
@@ -155,7 +155,7 @@ class SimulatedVisionServer(object):
 
         try:
             self.ros_overhead_trigger.wait_for_service(timeout=0.1)
-            self.ros_overhead_trigger(False)
+            self.ros_overhead_trigger()
         except:
             pass
 
@@ -307,9 +307,9 @@ class SimulatedVisionServer(object):
 
         try:
             self.ros_gripper_1_trigger.wait_for_service(timeout=0.1)
-            self.ros_gripper_1_trigger(False)
+            self.ros_gripper_1_trigger()
             self.ros_gripper_2_trigger.wait_for_service(timeout=0.1)
-            self.ros_gripper_2_trigger(False)
+            self.ros_gripper_2_trigger()
         except:
             pass
 
